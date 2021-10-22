@@ -1,0 +1,48 @@
+name: Build theme
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths-ignore:
+      - *.md
+      - .github/**
+      - docs/**
+
+jobs:
+  init:
+    name: Initialise dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        id: step-cache-node-modules
+        env:
+          cache-name: cache-node-modules-test
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('yarn.lock') }}
+      - name: Install dependencies
+        if: steps.step-cache-node-modules.outputs.cache-hit != 'true'    
+        run: |
+          yarn --frozen-lockfile
+
+  build-theme:
+    name: Build default-theme package
+    needs: init
+    runs-on: ubuntu-latest
+    outputs:
+      package-hash: ${{ steps.folder-hash-step-default-theme.outputs.hash }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "14"
